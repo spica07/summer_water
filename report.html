@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<title>지자체별 요약 리포트 📊</title>
+<meta name="description" content="전국 지자체별 공공 물놀이장 현황 요약 리포트">
+<meta name="theme-color" content="#6B5B95">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="512x512" href="assets/icons/app-icon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/app-icon-apple-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="물놀이장 지도">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <a class="report-btn" href="index.html">🗺️ 지도로</a>
+  <div class="header-inner">
+    <h1 class="app-title">📊 지자체별 요약 리포트</h1>
+    <p class="app-subtitle">전국 공공 물놀이장 <span id="totalCount"></span>곳 · 조사 기준일 <span id="surveyDate"></span></p>
+    <div class="top-notice">💦 참고용으로만 사용! 방문 전 확인하세요.</div>
+  </div>
+  <div class="floating-emoji e1">💦</div>
+  <div class="floating-emoji e2">🌊</div>
+</header>
+
+<main class="container report-page">
+
+  <!-- 핵심 지표 -->
+  <section class="panel">
+    <h2 class="report-section-title">한눈에 보기</h2>
+    <div class="stat-tiles" id="statTiles"></div>
+  </section>
+
+  <!-- 운영상태 분포 -->
+  <section class="panel">
+    <h2 class="report-section-title">운영상태 분포</h2>
+    <div class="status-chips" id="statusChips"></div>
+  </section>
+
+  <!-- 지자체별 시설 수 -->
+  <section class="panel">
+    <h2 class="report-section-title">지자체별 시설 수</h2>
+    <div class="district-bars" id="districtBars"></div>
+    <p class="dash-hint">막대를 누르면 지도에서 해당 지자체만 볼 수 있어요</p>
+  </section>
+
+  <!-- 지자체별 상세 표 -->
+  <section class="panel">
+    <h2 class="report-section-title">지자체별 상세</h2>
+    <div class="table-wrap">
+      <table class="report-table" id="reportTable">
+        <thead>
+          <tr>
+            <th>지자체</th><th>시설 수</th><th>운영중</th><th>2026 확인</th><th>운영예정</th><th>무료</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="app-footer">
+    <p>자료는 각 지자체 공식 발표·보도 기준이며 방문 전 운영 여부를 꼭 확인하세요.</p>
+  </footer>
+</main>
+
+<div class="site-notice" role="note">
+  © 2026 전국 물놀이장 지도 · 무단 복제를 금합니다. 본 사이트는 정보 공유 목적으로 제공됩니다. 시설명·상표·이미지 등의 권리는 해당 권리자에게 있습니다.
+</div>
+
+<script src="assets/js/data.js"></script>
+<script src="assets/js/report.js"></script>
+</body>
+</html>

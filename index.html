@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<title>전국 물놀이장 지도 💦</title>
+<meta name="description" content="전국 시·군·구 공공 물놀이장 지도 — 지자체별 조회, 검색, 운영정보">
+<meta name="theme-color" content="#6B5B95">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="512x512" href="assets/icons/app-icon-512.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/app-icon-apple-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="물놀이장 지도">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <h1 class="app-title">💦 전국 물놀이장 지도 🌊</h1>
+    <p class="app-subtitle">전국 시·군·구 공공 물놀이장 <span id="totalCount"></span>곳을 한눈에!</p>
+    <div class="top-notice">💦 참고용으로만 사용! 방문 전 확인하세요.</div>
+  </div>
+  <div class="floating-emoji e1">🏖️</div>
+  <div class="floating-emoji e2">🩱</div>
+  <div class="floating-emoji e3">🦆</div>
+  <div class="floating-emoji e4">⛱️</div>
+</header>
+
+<main class="container">
+
+  <!-- 필터 바 -->
+  <section class="panel filter-bar">
+    <div class="filter-row search-row">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="search" id="searchInput" placeholder="시설명이나 주소로 검색해 보세요" autocomplete="off">
+      </div>
+      <select id="districtSelect" class="district-select" aria-label="지자체 선택">
+        <option value="">전체 지자체</option>
+      </select>
+      <button class="filter-collapse-btn" id="filterToggleBtn" type="button"
+              title="필터 열기" aria-label="필터 열기" aria-expanded="false">🔽</button>
+    </div>
+    <div class="filter-groups" id="filterGroups" hidden>
+      <div class="filter-row" id="regionFilters" data-key="region">
+        <span class="filter-label">🌏 지역</span>
+      </div>
+      <div class="filter-row" id="statusFilters" data-key="status">
+        <span class="filter-label">✅ 운영상태</span>
+      </div>
+      <div class="filter-row" id="typeFilters" data-key="type">
+        <span class="filter-label">🏷️ 시설유형</span>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">⚡ 빠른필터</span>
+        <button class="pill" id="feeFree" data-toggle="fee">💰 무료만</button>
+        <button class="pill" id="openToday" data-toggle="openToday">☀️ 오늘 운영중</button>
+        <button class="pill" id="favOnly" data-toggle="favOnly">❤️ 찜만 보기</button>
+        <button class="pill reset" id="resetBtn">↺ 초기화</button>
+      </div>
+    </div>
+    <div class="result-count" id="resultCount"></div>
+  </section>
+
+  <!-- 뷰 전환 (모바일) -->
+  <div class="view-toggle" id="viewToggle">
+    <button class="pill active" data-view="map">🗺️ 지도</button>
+    <button class="pill" data-view="list">📋 목록</button>
+  </div>
+
+  <!-- 지도 + 카드 목록 -->
+  <section class="content-grid">
+    <div class="map-pane" id="mapPane">
+      <div id="map"></div>
+      <div class="map-legend" id="mapLegend"></div>
+    </div>
+    <div class="list-pane" id="listPane">
+      <div class="card-grid" id="cardGrid"></div>
+      <div class="empty-state" id="emptyState" hidden>
+        <div class="empty-emoji">🐳</div>
+        <p>조건에 맞는 물놀이장이 없어요.<br>필터를 바꿔 보세요!</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="app-footer">
+    <p>조사 기준일: <span id="surveyDate"></span> · 자료는 각 지자체 공식 발표·보도 기준이며 방문 전 운영 여부를 꼭 확인하세요.</p>
+  </footer>
+</main>
+
+<div class="site-notice" role="note">
+  © 2026 전국 물놀이장 지도 · 무단 복제를 금합니다. 본 사이트는 정보 공유 목적으로 제공됩니다. 시설명·상표·이미지 등의 권리는 해당 권리자에게 있습니다.
+</div>
+
+<!-- 상세 모달 -->
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <button class="modal-close" id="modalClose" aria-label="닫기">✕</button>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
