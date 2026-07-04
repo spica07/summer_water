@@ -48,7 +48,7 @@
     fee: false,       // true = 무료만
     openToday: false,
     favOnly: false,
-    view: 'map'
+    view: 'list'
   };
 
   var favorites = loadFavorites();
@@ -485,9 +485,9 @@
   buildFilterPills();
   buildDistrictSelect();
   buildLegend();
-  // 모바일 기본은 지도 뷰
+  // 모바일 기본은 목록 뷰
   if (window.innerWidth <= 900) {
-    document.querySelector('.content-grid').classList.add('view-map');
+    document.querySelector('.content-grid').classList.add('view-list');
   }
   // 리포트 페이지 등에서 ?district=자치구 로 진입한 경우 필터 적용
   var paramDistrict = new URLSearchParams(location.search).get('district');
