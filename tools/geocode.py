@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-"""facilities_raw.json (서울) + facilities_extra.json (경기/인천) -> assets/js/data.js 생성
+"""facilities_extra.json (전국 조사 데이터, 서울 포함) -> assets/js/data.js 생성
+
+  * facilities_raw.json (서울 xlsx 파이프라인)은 폐지됨. 파일이 남아 있으면 병합하되,
+    현재 서울 25개 자치구는 다른 지역과 동일하게 water-researcher 웹 조사로 관리한다.
 
 지오코딩 3단계:
   1) manual   — 한강공원/유명 공원 수동 좌표 (서울 한정, 시설명 부분일치)
@@ -19,8 +22,8 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 TOOLS = Path(__file__).resolve().parent
 BASE = TOOLS.parent
-RAW = TOOLS / "facilities_raw.json"
-EXTRA = TOOLS / "facilities_extra.json"  # 경기/인천 (조사 에이전트 산출물, 있으면 병합)
+RAW = TOOLS / "facilities_raw.json"  # (레거시) 서울 xlsx 산출물 — 폐지, 있으면 병합
+EXTRA = TOOLS / "facilities_extra.json"  # 전국 조사 에이전트 산출물 (서울 포함)
 CACHE_FILE = TOOLS / "geocode_cache.json"
 OUT = BASE / "assets" / "js" / "data.js"
 
@@ -327,12 +330,17 @@ def parse_period(p):
     return None, None
 
 def main():
-    data = json.loads(RAW.read_text(encoding="utf-8"))
-    facilities = data["facilities"]
-    for f in facilities:
-        f["region"] = "서울"
+    facilities = []
+    summary = {}
+    # (레거시) 서울 xlsx 산출물이 남아 있으면 병합 — 현재는 서울도 EXTRA로 관리
+    if RAW.exists():
+        data = json.loads(RAW.read_text(encoding="utf-8"))
+        facilities = data.get("facilities", [])
+        summary = data.get("summary", {})
+        for f in facilities:
+            f.setdefault("region", "서울")
 
-    # 경기/인천 추가 데이터 병합 (id 200번대부터 — 서울 xlsx id와 충돌 방지)
+    # 전국 조사 데이터 병합 (서울 포함, id 200번대부터 — 레거시 raw id와 충돌 방지)
     if EXTRA.exists():
         extra = json.loads(EXTRA.read_text(encoding="utf-8"))["facilities"]
         next_id = 200
@@ -348,7 +356,7 @@ def main():
             if f.get("district") not in DISTRICT_CENTERS:
                 print(f"  ! 알 수 없는 지자체: {f.get('district')} ({f.get('name')})")
         facilities += extra
-        print(f"extra: 경기/인천 {len(extra)}개 시설 병합")
+        print(f"extra: 전국 {len(extra)}개 시설 병합")
 
     tiers = {"manual": 0, "geocoded": 0, "approx": 0}
     for f in facilities:
@@ -371,9 +379,9 @@ def main():
         + ";\nwindow.FACILITIES = "
         + json.dumps(facilities, ensure_ascii=False)
         + ";\nwindow.DISTRICT_SUMMARY = "
-        + json.dumps(data["summary"], ensure_ascii=False)
+        + json.dumps(summary, ensure_ascii=False)
         + ";\nwindow.DATA_META = "
-        + json.dumps({"surveyDate": "2026-07-03", "total": len(facilities)}, ensure_ascii=False)
+        + json.dumps({"surveyDate": "2026-07-07", "total": len(facilities)}, ensure_ascii=False)
         + ";\n"
     )
     OUT.write_text(js, encoding="utf-8")
