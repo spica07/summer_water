@@ -9,6 +9,7 @@
   2) geocoded — Nominatim (쿼리 사다리: 주소 → 정제주소 → 지자체+시설명 → 지자체+공원명)
   3) approx   — 지자체 중심 + 결정적 지터 (±약 1.5km)
 """
+import calendar
 import colorsys
 import json
 import re
@@ -223,6 +224,20 @@ MANUAL_COORDS = {
     "여의도공원": (37.5254, 126.9231), "응봉근린공원": (37.5522, 127.0312),
 }
 
+def load_previous_facilities():
+    """재조회 실패 시 이미 검증된 좌표가 근사 좌표로 후퇴하지 않도록 기존 산출물을 읽는다."""
+    if not OUT.exists():
+        return {}
+    try:
+        text = OUT.read_text(encoding="utf-8")
+        start = text.index("window.FACILITIES = ") + len("window.FACILITIES = ")
+        end = text.index(";\nwindow.DISTRICT_SUMMARY", start)
+        return {f["id"]: f for f in json.loads(text[start:end])}
+    except (ValueError, KeyError, json.JSONDecodeError):
+        return {}
+
+
+previous_facilities = load_previous_facilities()
 cache = json.loads(CACHE_FILE.read_text(encoding="utf-8")) if CACHE_FILE.exists() else {}
 
 session = requests.Session()
@@ -232,23 +247,50 @@ def in_region(lat, lng, region):
     box = REGION_BOX.get(region, REGION_BOX["서울"])
     return box[0] <= lat <= box[1] and box[2] <= lng <= box[3]
 
+
+def is_precise_result(item):
+    """번지 검색을 무시한 행정동·도로·정류장 결과를 시설 좌표로 채택하지 않는다."""
+    category = item.get("category") or item.get("class")
+    result_type = item.get("type")
+    # 메타가 없던 기존 캐시는 그대로 사용하고, 새 조회부터 엄격하게 판정한다.
+    if category is None and result_type is None:
+        return True
+    if category in {"boundary", "highway"}:
+        return False
+    if category == "place" and result_type != "house":
+        return False
+    if result_type in {
+        "administrative", "quarter", "suburb", "neighbourhood", "city", "town",
+        "village", "road", "primary", "secondary", "tertiary", "residential",
+        "service", "bus_stop",
+    }:
+        return False
+    return True
+
 def nominatim(query, region):
     cache_key = query if region == "서울" else f"{region}|{query}"  # 기존 서울 캐시 호환
     if cache_key in cache:
-        return cache[cache_key]
+        return [item for item in cache[cache_key] if is_precise_result(item)]
     try:
         r = session.get(
             "https://nominatim.openstreetmap.org/search",
-            params={"format": "json", "q": query, "countrycodes": "kr",
-                    "accept-language": "ko", "limit": 3},
+            params={"format": "jsonv2", "q": query, "countrycodes": "kr",
+                    "accept-language": "ko", "addressdetails": 1, "limit": 3},
             timeout=15,
         )
         r.raise_for_status()
-        results = [
-            {"lat": float(x["lat"]), "lng": float(x["lon"])}
-            for x in r.json()
-            if in_region(float(x["lat"]), float(x["lon"]), region)
-        ]
+        results = []
+        for x in r.json():
+            lat, lng = float(x["lat"]), float(x["lon"])
+            item = {
+                "lat": lat,
+                "lng": lng,
+                "category": x.get("category") or x.get("class"),
+                "type": x.get("type"),
+                "displayName": x.get("display_name"),
+            }
+            if in_region(lat, lng, region) and is_precise_result(item):
+                results.append(item)
     except Exception as e:
         print(f"  ! request failed for {query!r}: {e}")
         results = None  # 실패는 캐시하지 않음
@@ -264,8 +306,21 @@ def clean_address(addr):
     return a.strip()
 
 def park_name(name):
-    m = re.search(r"([가-힣0-9]+(?:공원|놀이터|광장|천|숲))", name)
-    return m.group(1) if m else None
+    # 하이픈 앞 행사명은 버리고 '원페를라 어린이공원'처럼 고유명까지 포함한다.
+    tail = re.split(r"\s*[-–(]\s*", name)[-1]
+    matches = re.findall(
+        r"([가-힣0-9]+(?:\s+[가-힣0-9]+){0,3}?(?:공원|놀이터|광장|숲))(?=\s|$)", tail)
+    return matches[-1].strip() if matches else None
+
+
+def with_region_prefix(text, prefix, region):
+    if not prefix:
+        return text
+    if region == "경기" and re.match(r"^경기(?:도)?\s", text):
+        return text
+    if region == "서울" and re.match(r"^서울(?:특별시)?\s", text):
+        return text
+    return f"{prefix} {text}"
 
 def geocode_one(f):
     name, district, addr = f["name"] or "", f["district"] or "", f["address"] or ""
@@ -278,18 +333,26 @@ def geocode_one(f):
         for key, coord in MANUAL_COORDS.items():
             if key in name or (addr and key in addr):
                 return coord[0], coord[1], "manual"
+    # 원본의 이름·주소가 그대로면 이미 검증된 좌표를 우선해 반복 실행의 회귀를 막는다.
+    previous = previous_facilities.get(f.get("id"))
+    if (previous and previous.get("district") == district
+            and previous.get("name") == name and previous.get("address") == addr
+            and previous.get("geo") in {"manual", "geocoded"}):
+        return previous["lat"], previous["lng"], previous["geo"]
     # 2) nominatim ladder
     queries = []
     if addr:
-        full = addr if prefix == "" or prefix in addr else f"{prefix} {addr}"
-        queries.append(full)
+        queries.append(with_region_prefix(addr, prefix, region))
         ca = clean_address(addr)
         if ca and ca != addr:
-            queries.append(ca if prefix == "" or prefix in ca else f"{prefix} {ca}")
+            queries.append(with_region_prefix(ca, prefix, region))
     queries.append(f"{prefix} {dq} {name}".strip())
     pk = park_name(name)
     if pk and pk != name:
         queries.append(f"{prefix} {dq} {pk}".strip())
+        # 공공데이터의 '근린공원'과 지도상의 축약명 '공원' 차이도 조회한다.
+        if "근린공원" in pk:
+            queries.append(f"{prefix} {dq} {pk.replace('근린공원', '공원')}".strip())
     seen = set()
     for q in queries:
         if q in seen:
@@ -298,6 +361,12 @@ def geocode_one(f):
         results = nominatim(q, region)
         if results:
             return results[0]["lat"], results[0]["lng"], "geocoded"
+    # 주소·이름이 갱신돼 재조회가 실패해도 기존의 검증 좌표를 근사치로 덮지 않는다.
+    previous = previous_facilities.get(f.get("id"))
+    if (previous and previous.get("district") == district
+            and (previous.get("name") == name or previous.get("address") == addr)
+            and previous.get("geo") in {"manual", "geocoded"}):
+        return previous["lat"], previous["lng"], previous["geo"]
     # 3) district jitter (결정적)
     clat, clng = DISTRICT_CENTERS.get(district, (37.5665, 126.9780))
     jlat = ((f["id"] * 37) % 100 - 50) * 0.00028
@@ -315,15 +384,47 @@ def district_colors():
     return colors
 
 def parse_period(p):
-    """'2026.07.01~08.24' 류 문자열에서 (periodStart, periodEnd) ISO 날짜 추출"""
+    """운영기간 문자열에서 검색용 (최초 시작일, 최종 종료일)을 ISO 날짜로 추출."""
     if not p:
         return None, None
+
+    # 복수 운영 구간은 전체 시즌의 최초 시작일과 최종 종료일을 사용한다.
+    ranges = list(re.finditer(
+        r"(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})\s*[~\-–]\s*(?:(\d{4})[.\-/])?(\d{1,2})[.\-/](\d{1,2})", p))
+    if ranges:
+        starts, ends = [], []
+        for m in ranges:
+            y1, mo1, d1, y2, mo2, d2 = m.groups()
+            starts.append(f"{y1}-{int(mo1):02d}-{int(d1):02d}")
+            ends.append(f"{y2 or y1}-{int(mo2):02d}-{int(d2):02d}")
+        return min(starts), max(ends)
+
+    # 월 단위 시작 + 정확한 종료일: '2026.06월~08.23'
     m = re.search(
-        r"(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})\s*[~\-–]\s*(?:(\d{4})[.\-/])?(\d{1,2})[.\-/](\d{1,2})", p)
+        r"(\d{4})[.\-/년]\s*(\d{1,2})월?\s*[~\-–]\s*(\d{1,2})[.\-/](\d{1,2})", p)
     if m:
-        y1, mo1, d1, y2, mo2, d2 = m.groups()
-        return (f"{y1}-{int(mo1):02d}-{int(d1):02d}",
-                f"{y2 or y1}-{int(mo2):02d}-{int(d2):02d}")
+        year, start_month, end_month, end_day = map(int, m.groups())
+        return (f"{year}-{start_month:02d}-01",
+                f"{year}-{end_month:02d}-{end_day:02d}")
+
+    # 월 단위 범위: '2026.07~08', '2026년 7월~8월'
+    m = re.search(
+        r"(\d{4})(?:년|[.\-/])\s*(\d{1,2})월?\s*[~\-–]\s*(\d{1,2})월?(?:\D|$)", p)
+    if m:
+        year, start_month, end_month = map(int, m.groups())
+        end_day = calendar.monthrange(year, end_month)[1]
+        return (f"{year}-{start_month:02d}-01",
+                f"{year}-{end_month:02d}-{end_day:02d}")
+
+    # 종료일만 알려진 경우: '~2025.08.24', '2025년 ~08.24'
+    m = re.search(r"(?:^|\s)~\s*(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})", p)
+    if m:
+        return None, f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
+    m = re.search(r"(\d{4})년\s*~\s*(\d{1,2})[.\-/](\d{1,2})", p)
+    if m:
+        return None, f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
+
+    # 정확한 시작일만 알려진 경우: '2026.07.25~'
     m = re.search(r"(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})", p)
     if m:
         return f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}", None
@@ -381,7 +482,7 @@ def main():
         + ";\nwindow.DISTRICT_SUMMARY = "
         + json.dumps(summary, ensure_ascii=False)
         + ";\nwindow.DATA_META = "
-        + json.dumps({"surveyDate": "2026-07-07", "total": len(facilities)}, ensure_ascii=False)
+        + json.dumps({"surveyDate": "2026-07-11", "total": len(facilities)}, ensure_ascii=False)
         + ";\n"
     )
     OUT.write_text(js, encoding="utf-8")

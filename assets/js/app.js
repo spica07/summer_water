@@ -80,14 +80,31 @@
     return '';
   }
 
+  function explicitPeriodRanges(period) {
+    var ranges = [];
+    var re = /(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})\s*[~\-–]\s*(?:(\d{4})[.\-/])?(\d{1,2})[.\-/](\d{1,2})/g;
+    var m;
+    while ((m = re.exec(period || '')) !== null) {
+      var start = m[1] + '-' + String(m[2]).padStart(2, '0') + '-' + String(m[3]).padStart(2, '0');
+      var end = (m[4] || m[1]) + '-' + String(m[5]).padStart(2, '0') + '-' + String(m[6]).padStart(2, '0');
+      ranges.push([start, end]);
+    }
+    return ranges;
+  }
+
   /* ---------- 오늘 운영중 판정 ---------- */
   function isOpenToday(f, now) {
-    if (f.status === '중단') return false;
+    if (['운영중', '운영예정', '2026 확인'].indexOf(f.status) === -1) return false;
     var today = now.getFullYear() + '-' +
       String(now.getMonth() + 1).padStart(2, '0') + '-' +
       String(now.getDate()).padStart(2, '0');
-    if (f.periodStart && today < f.periodStart) return false;
-    if (f.periodEnd && today > f.periodEnd) return false;
+    var ranges = explicitPeriodRanges(f.period);
+    if (ranges.length > 1) {
+      if (!ranges.some(function (range) { return today >= range[0] && today <= range[1]; })) return false;
+    } else {
+      if (f.periodStart && today < f.periodStart) return false;
+      if (f.periodEnd && today > f.periodEnd) return false;
+    }
     var closed = f.closedInfo || '';
     var dayKo = ['일', '월', '화', '수', '목', '금', '토'][now.getDay()];
     var m = closed.match(/(?:매주\s*)?([월화수목금토일][월화수목금토일·,~\s]*?)(?:요일)?\s*휴/);
