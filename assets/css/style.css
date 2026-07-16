@@ -136,6 +136,9 @@ body {
 .dash-hint { margin-top: 10px; font-size: 0.8rem; color: #A89AC5; text-align: center; }
 
 /* ---------- 필터 바 ---------- */
+.filter-bar {
+  position: sticky; top: 8px; z-index: 900;
+}
 .filter-row {
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
   margin-bottom: 10px;
