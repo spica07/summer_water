@@ -54,6 +54,22 @@
     localStorage.setItem('sw_favorites', JSON.stringify(Array.from(favorites)));
   }
 
+  function loadLastFilters() {
+    try {
+      return JSON.parse(localStorage.getItem('sw_lastFilters')) || null;
+    } catch (e) { return null; }
+  }
+  function saveLastFilters() {
+    try {
+      var toggles = {};
+      document.querySelectorAll('[data-toggle]').forEach(function (btn) {
+        toggles[btn.getAttribute('data-toggle')] = !!state[btn.getAttribute('data-toggle')];
+      });
+      toggles.district = state.district;
+      localStorage.setItem('sw_lastFilters', JSON.stringify(toggles));
+    } catch (e) {}
+  }
+
   function esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -343,6 +359,7 @@
       var v = REGION_VIEW[state.region] || REGION_VIEW[''];
       map.flyTo(v.center, v.zoom, { duration: 0.8 });
     }
+    saveLastFilters();
     render();
   }
 
@@ -447,6 +464,7 @@
       var key = togglePill.getAttribute('data-toggle');
       state[key] = !state[key];
       togglePill.classList.toggle('active', state[key]);
+      saveLastFilters();
       render();
       return;
     }
@@ -505,7 +523,23 @@
   if (paramDistrict && DISTRICT_META[paramDistrict]) {
     setDistrict(paramDistrict);
   } else {
-    render();
+    var savedFilters = loadLastFilters();
+    if (savedFilters) {
+      document.querySelectorAll('[data-toggle]').forEach(function (btn) {
+        var key = btn.getAttribute('data-toggle');
+        if (savedFilters[key]) {
+          state[key] = true;
+          btn.classList.add('active');
+        }
+      });
+      if (savedFilters.district && DISTRICT_META[savedFilters.district]) {
+        setDistrict(savedFilters.district);
+      } else {
+        render();
+      }
+    } else {
+      render();
+    }
   }
 
   // PWA: 서비스 워커 등록 (홈 화면 설치 · 오프라인 지원)
