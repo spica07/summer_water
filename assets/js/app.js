@@ -143,7 +143,7 @@
   }
 
   /* ---------- 지도 ---------- */
-  var map = L.map('map', { zoomControl: true })
+  var map = L.map('map', { zoomControl: true, renderer: L.canvas() })
     .setView(REGION_VIEW[''].center, REGION_VIEW[''].zoom);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
