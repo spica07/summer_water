@@ -6,14 +6,6 @@
   var DISTRICT_META = window.DISTRICT_META || {};
   var DATA_META = window.DATA_META || {};
 
-  var TYPE_EMOJI = {
-    '공원 물놀이터': '💦',
-    '물놀이 분수': '⛲',
-    '한강 물놀이장': '🏊',
-    '하천/계곡': '🏞️',
-    '야외 수영장': '🩱',
-    '기타': '🌊'
-  };
   var TYPE_ORDER = ['공원 물놀이터', '물놀이 분수', '한강 물놀이장', '하천/계곡', '야외 수영장', '기타'];
   var STATUS_ORDER = ['운영중', '운영예정', '2026 확인', '전년도 확인', '재확인 필요', '기타 확인', '중단'];
   var REGION_ORDER = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
@@ -158,7 +150,7 @@
         dashArray: approx ? '3,3' : null
       });
       var popupHtml =
-        '<div class="popup-name">' + TYPE_EMOJI[f.type] + ' ' + esc(f.name) + '</div>' +
+        '<div class="popup-name">' + esc(f.name) + '</div>' +
         '<div class="popup-meta">' + esc(f.district) + ' · ' + esc(f.status) +
         (approx ? ' · 위치는 대략적' : '') + '</div>' +
         '<button class="popup-btn" data-popup-detail="' + f.id + '">자세히 보기</button>';
@@ -198,18 +190,18 @@
     if (f.isFree === true) tags.push('<span class="tag free">무료</span>');
     if (f.isFree === false) tags.push('<span class="tag paid">유료</span>');
     var info = [];
-    info.push('<div class="card-info"><span class="ico">📅</span>' + esc(f.period || '기간 정보 없음') + '</div>');
-    if (f.hours) info.push('<div class="card-info"><span class="ico">⏰</span>' + esc(f.hours) + '</div>');
+    info.push('<div class="card-info">' + esc(f.period || '기간 정보 없음') + '</div>');
+    if (f.hours) info.push('<div class="card-info">' + esc(f.hours) + '</div>');
     return (
-      '<article class="facility-card" data-id="' + f.id + '" style="--cc1:' + dc + '33; --cc2:#FFFFFF">' +
-        '<div class="card-emoji">' + TYPE_EMOJI[f.type] +
-          '<button class="fav-btn" data-fav="' + f.id + '" aria-label="찜">' + (fav ? '❤️' : '🤍') + '</button>' +
-        '</div>' +
+      '<article class="facility-card" data-id="' + f.id + '">' +
         '<div class="card-body">' +
-          '<h3 class="card-name">' + esc(f.name) + '</h3>' +
+          '<div class="card-title-row">' +
+            '<h3 class="card-name">' + esc(f.name) + '</h3>' +
+            '<button class="fav-btn" data-fav="' + f.id + '" aria-label="찜">' + (fav ? '❤️' : '🤍') + '</button>' +
+          '</div>' +
           '<div class="card-tags">' + tags.join('') + '</div>' +
           info.join('') +
-          '<button class="card-locate" data-locate="' + f.id + '">📍 위치보기</button>' +
+          '<button class="card-locate" data-locate="' + f.id + '">위치보기</button>' +
         '</div>' +
       '</article>'
     );
@@ -241,30 +233,29 @@
       encodeURIComponent(regionPrefix + f.district + ' ' + f.name);
     var body = document.getElementById('modalBody');
     body.innerHTML =
-      '<div class="modal-emoji">' + TYPE_EMOJI[f.type] + '</div>' +
       '<h2 class="modal-title">' + esc(f.name) + '</h2>' +
       '<div class="modal-tags">' +
         '<span class="tag district" style="background:' + dc + '">' + esc(f.district) + '</span>' +
         '<span class="tag ' + statusClass(f.status) + '">' + esc(f.status) + '</span>' +
       '</div>' +
       (f.geo === 'approx'
-        ? '<div class="geo-notice">📍 지도 위치는 지자체 기준 대략적인 표시예요. 정확한 위치는 길찾기로 확인하세요.</div>'
+        ? '<div class="geo-notice">지도 위치는 지자체 기준 대략적인 표시예요. 정확한 위치는 길찾기로 확인하세요.</div>'
         : '') +
       '<div class="detail-list">' +
-        detailRow('🏷️ 유형', f.typeRaw) +
-        detailRow('📍 주소', f.address) +
-        detailRow('📅 운영기간', f.period) +
-        detailRow('⏰ 운영시간', f.hours) +
-        detailRow('🚫 휴장/중단', f.closedInfo) +
-        detailRow('💰 대상/요금', f.feeInfo) +
-        detailRow('📝 예약', f.reservation) +
-        detailRow('✅ 운영상태', f.statusRaw) +
-        detailRow('📰 출처', f.source) +
-        detailRow('🔗 링크', f.sourceUrl, true) +
-        detailRow('💬 비고', f.note) +
+        detailRow('유형', f.typeRaw) +
+        detailRow('주소', f.address) +
+        detailRow('운영기간', f.period) +
+        detailRow('운영시간', f.hours) +
+        detailRow('휴장/중단', f.closedInfo) +
+        detailRow('대상/요금', f.feeInfo) +
+        detailRow('예약', f.reservation) +
+        detailRow('운영상태', f.statusRaw) +
+        detailRow('출처', f.source) +
+        detailRow('링크', f.sourceUrl, true) +
+        detailRow('비고', f.note) +
       '</div>' +
       '<div class="modal-links">' +
-        '<a class="link-btn map" href="' + naverUrl + '" target="_blank" rel="noopener">🧭 네이버 길찾기</a>' +
+        '<a class="link-btn map" href="' + naverUrl + '" target="_blank" rel="noopener">네이버 길찾기</a>' +
         '<button class="link-btn fav" data-fav="' + f.id + '">' + (fav ? '❤️ 찜 해제' : '🤍 찜하기') + '</button>' +
       '</div>';
     document.getElementById('modalOverlay').hidden = false;

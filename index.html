@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
-<title>전국 물놀이장 지도 💦</title>
+<title>전국 물놀이장 지도</title>
 <meta name="description" content="전국 시·군·구 공공 물놀이장 지도 — 지자체별 조회, 검색, 운영정보">
 <meta name="theme-color" content="#6B5B95">
 <link rel="manifest" href="manifest.json">
@@ -21,14 +21,10 @@
 
 <header class="app-header">
   <div class="header-inner">
-    <h1 class="app-title">💦 전국 물놀이장 지도 🌊</h1>
+    <h1 class="app-title">전국 물놀이장 지도</h1>
     <p class="app-subtitle">전국 시·군·구 공공 물놀이장 <span id="totalCount"></span>곳을 한눈에!</p>
-    <div class="top-notice">💦 참고용으로만 사용! 방문 전 확인하세요.</div>
+    <div class="top-notice">참고용으로만 사용! 방문 전 확인하세요.</div>
   </div>
-  <div class="floating-emoji e1">🏖️</div>
-  <div class="floating-emoji e2">🩱</div>
-  <div class="floating-emoji e3">🦆</div>
-  <div class="floating-emoji e4">⛱️</div>
 </header>
 
 <main class="container">
@@ -37,7 +33,6 @@
   <section class="panel filter-bar">
     <div class="filter-row search-row">
       <div class="search-box">
-        <span class="search-icon"></span>
         <input type="search" id="searchInput" placeholder="시설명이나 주소로 검색해 보세요" autocomplete="off">
       </div>
       <select id="districtSelect" class="district-select" aria-label="지자체 선택">
@@ -82,7 +77,6 @@
     <div class="list-pane" id="listPane">
       <div class="card-grid" id="cardGrid"></div>
       <div class="empty-state" id="emptyState" hidden>
-        <div class="empty-emoji">🐳</div>
         <p>조건에 맞는 물놀이장이 없어요.<br>필터를 바꿔 보세요!</p>
       </div>
     </div>
