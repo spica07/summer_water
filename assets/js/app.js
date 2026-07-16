@@ -67,6 +67,9 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
   }
+  function safeUrl(u) {
+    return /^https?:\/\//i.test(String(u == null ? '' : u)) ? String(u) : '';
+  }
 
   function districtColor(d) {
     return (DISTRICT_META[d] && DISTRICT_META[d].color) || '#6B5B95';
@@ -222,7 +225,7 @@
   function detailRow(k, v, isLink) {
     if (!v) return '';
     var val = isLink
-      ? '<a href="' + esc(v) + '" target="_blank" rel="noopener">' + esc(v) + '</a>'
+      ? (safeUrl(v) ? '<a href="' + esc(safeUrl(v)) + '" target="_blank" rel="noopener">' + esc(v) + '</a>' : esc(v))
       : esc(v);
     return '<div class="detail-item"><span class="k">' + k + '</span><span class="v">' + val + '</span></div>';
   }
