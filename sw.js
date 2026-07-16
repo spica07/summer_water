@@ -8,7 +8,7 @@
  *
  * 콘텐츠를 크게 바꾸면 CACHE 버전 숫자를 올려서 옛 캐시를 비운다.
  */
-const CACHE = 'summer-water-cache-v8';
+const CACHE = 'summer-water-cache-v9';
 
 // 첫 진입에 필요한 핵심 자원(앱 셸) — 오프라인 첫 실행 보장
 const CORE_ASSETS = [

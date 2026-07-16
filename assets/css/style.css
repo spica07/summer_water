@@ -192,7 +192,11 @@ body {
   box-shadow: 0 4px 14px rgba(255, 107, 157, 0.4);
 }
 .pill.reset { color: var(--text-muted); border-color: #eee; }
-.result-count { margin-top: 12px; font-size: 0.95rem; color: var(--purple); }
+.result-count-row {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  margin-top: 12px;
+}
+.result-count { font-size: 0.95rem; color: var(--purple); }
 
 /* ---------- 뷰 전환 ---------- */
 .view-toggle { display: none; justify-content: center; gap: 8px; margin-bottom: 14px; }
