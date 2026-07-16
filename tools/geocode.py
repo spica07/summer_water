@@ -6,8 +6,10 @@
 
 지오코딩 3단계:
   1) manual   — 한강공원/유명 공원 수동 좌표 (서울 한정, 시설명 부분일치)
-  2) geocoded — Nominatim (쿼리 사다리: 주소 → 정제주소 → 지자체+시설명 → 지자체+공원명)
+  2) geocoded — Kakao Local API (쿼리 사다리: 주소검색(원주소→정제주소) → 키워드검색(지자체+시설명→지자체+공원명))
   3) approx   — 지자체 중심 + 결정적 지터 (±약 1.5km)
+
+인증키는 .env(KAKAO_REST_KEY)에서 읽는다.
 """
 import calendar
 import colorsys
@@ -25,7 +27,6 @@ TOOLS = Path(__file__).resolve().parent
 BASE = TOOLS.parent
 RAW = TOOLS / "facilities_raw.json"  # (레거시) 서울 xlsx 산출물 — 폐지, 있으면 병합
 EXTRA = TOOLS / "facilities_extra.json"  # 전국 조사 에이전트 산출물 (서울 포함)
-CACHE_FILE = TOOLS / "geocode_cache.json"
 OUT = BASE / "assets" / "js" / "data.js"
 
 # 지역별 허용 범위 (lat_min, lat_max, lng_min, lng_max)
@@ -224,81 +225,94 @@ MANUAL_COORDS = {
     "여의도공원": (37.5254, 126.9231), "응봉근린공원": (37.5522, 127.0312),
 }
 
-def load_previous_facilities():
-    """재조회 실패 시 이미 검증된 좌표가 근사 좌표로 후퇴하지 않도록 기존 산출물을 읽는다."""
-    if not OUT.exists():
-        return {}
-    try:
-        text = OUT.read_text(encoding="utf-8")
-        start = text.index("window.FACILITIES = ") + len("window.FACILITIES = ")
-        end = text.index(";\nwindow.DISTRICT_SUMMARY", start)
-        return {f["id"]: f for f in json.loads(text[start:end])}
-    except (ValueError, KeyError, json.JSONDecodeError):
-        return {}
-
-
-previous_facilities = load_previous_facilities()
-cache = json.loads(CACHE_FILE.read_text(encoding="utf-8")) if CACHE_FILE.exists() else {}
+def load_kakao_key():
+    env_path = BASE / ".env"
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        if line.startswith("KAKAO_REST_KEY="):
+            return line.split("=", 1)[1].strip()
+    raise RuntimeError(".env 에서 KAKAO_REST_KEY를 찾을 수 없습니다.")
+KAKAO_CACHE_FILE = TOOLS / "kakao_cache.json"
+cache = json.loads(KAKAO_CACHE_FILE.read_text(encoding="utf-8")) if KAKAO_CACHE_FILE.exists() else {}
 
 session = requests.Session()
-session.headers["User-Agent"] = "summer-water-map/1.0"
+session.headers["Authorization"] = "KakaoAK " + load_kakao_key()
+
+KAKAO_ADDR_URL = "https://dapi.kakao.com/v2/local/search/address.json"
+KAKAO_KEYWORD_URL = "https://dapi.kakao.com/v2/local/search/keyword.json"
+REQUEST_SLEEP = 0.05  # 카카오 로컬은 QPS 여유가 커 최소 지연만 둔다
+
 
 def in_region(lat, lng, region):
     box = REGION_BOX.get(region, REGION_BOX["서울"])
     return box[0] <= lat <= box[1] and box[2] <= lng <= box[3]
 
 
-def is_precise_result(item):
-    """번지 검색을 무시한 행정동·도로·정류장 결과를 시설 좌표로 채택하지 않는다."""
-    category = item.get("category") or item.get("class")
-    result_type = item.get("type")
-    # 메타가 없던 기존 캐시는 그대로 사용하고, 새 조회부터 엄격하게 판정한다.
-    if category is None and result_type is None:
-        return True
-    if category in {"boundary", "highway"}:
-        return False
-    if category == "place" and result_type != "house":
-        return False
-    if result_type in {
-        "administrative", "quarter", "suburb", "neighbourhood", "city", "town",
-        "village", "road", "primary", "secondary", "tertiary", "residential",
-        "service", "bus_stop",
-    }:
-        return False
-    return True
+def save_cache():
+    KAKAO_CACHE_FILE.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
 
-def nominatim(query, region):
-    cache_key = query if region == "서울" else f"{region}|{query}"  # 기존 서울 캐시 호환
-    if cache_key in cache:
-        return [item for item in cache[cache_key] if is_precise_result(item)]
-    try:
-        r = session.get(
-            "https://nominatim.openstreetmap.org/search",
-            params={"format": "jsonv2", "q": query, "countrycodes": "kr",
-                    "accept-language": "ko", "addressdetails": 1, "limit": 3},
-            timeout=15,
-        )
-        r.raise_for_status()
-        results = []
-        for x in r.json():
-            lat, lng = float(x["lat"]), float(x["lon"])
-            item = {
-                "lat": lat,
-                "lng": lng,
-                "category": x.get("category") or x.get("class"),
-                "type": x.get("type"),
-                "displayName": x.get("display_name"),
-            }
-            if in_region(lat, lng, region) and is_precise_result(item):
-                results.append(item)
-    except Exception as e:
-        print(f"  ! request failed for {query!r}: {e}")
-        results = None  # 실패는 캐시하지 않음
-    if results is not None:
-        cache[cache_key] = results
-        CACHE_FILE.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
-    time.sleep(1.1)
-    return results or []
+
+def _kakao_get(url, query):
+    """카카오 로컬 API 호출. 실패 시 None(에러)/빈 리스트(결과없음)를 구분해 반환한다."""
+    for attempt in range(3):
+        try:
+            r = session.get(url, params={"query": query}, timeout=15)
+            if r.status_code == 429:  # 초당 한도 초과 → 잠시 쉬고 재시도
+                time.sleep(1.0)
+                continue
+            r.raise_for_status()
+            time.sleep(REQUEST_SLEEP)
+            return r.json().get("documents", [])
+        except requests.RequestException as e:
+            if attempt == 2:
+                print(f"  ! 요청 실패: {query!r} ({e})")
+                return None
+            time.sleep(0.5)
+    return None
+
+
+def kakao_address(query, region):
+    """주소검색: 정밀한 결과 & 지역 범위 내 첫 결과의 (lat, lng).
+    도로명주소(ROAD_ADDR)는 항상 정밀로 인정한다. 지번주소(REGION_ADDR/REGION)는
+    "OO시 OO구"처럼 행정구역명만 매칭되면 그 구역 대표좌표를 반환하는데(여러 시설이
+    같은 좌표로 뭉치는 원인), 응답에 구체적 번지(main_address_no)가 있으면 실제
+    특정 지번까지 해석된 것이므로 그 경우만 정밀로 인정한다."""
+    key = f"addr:{region}|{query}"
+    if key not in cache:
+        docs = _kakao_get(KAKAO_ADDR_URL, query)
+        if docs is None:
+            return None  # 에러는 캐시하지 않는다
+        hit = None
+        for d in docs:
+            addr_type = d.get("address_type")
+            if addr_type != "ROAD_ADDR":
+                main_no = (d.get("address") or {}).get("main_address_no")
+                if not main_no:
+                    continue
+            lat, lng = float(d["y"]), float(d["x"])
+            if in_region(lat, lng, region):
+                hit = {"lat": lat, "lng": lng}
+                break
+        cache[key] = hit
+        save_cache()
+    return cache[key]
+
+
+def kakao_keyword(query, region):
+    """키워드(시설명)검색: 지역 범위 내 첫 결과의 (lat, lng)."""
+    key = f"kw:{region}|{query}"
+    if key not in cache:
+        docs = _kakao_get(KAKAO_KEYWORD_URL, query)
+        if docs is None:
+            return None
+        hit = None
+        for d in docs:
+            lat, lng = float(d["y"]), float(d["x"])
+            if in_region(lat, lng, region):
+                hit = {"lat": lat, "lng": lng}
+                break
+        cache[key] = hit
+        save_cache()
+    return cache[key]
 
 def clean_address(addr):
     a = re.sub(r"\(.*?\)", "", addr)
@@ -307,9 +321,12 @@ def clean_address(addr):
 
 def park_name(name):
     # 하이픈 앞 행사명은 버리고 '원페를라 어린이공원'처럼 고유명까지 포함한다.
+    # "OO물놀이장"처럼 일반 단어가 그대로 붙은 원문으로 검색하면 카카오 키워드
+    # 랭킹이 엉뚱한 곳을 1순위로 주는 경우가 많아, 공원/분수/수영장 등 랜드마크형
+    # 고유명만 최대한 추출해 먼저 검색한다.
     tail = re.split(r"\s*[-–(]\s*", name)[-1]
     matches = re.findall(
-        r"([가-힣0-9]+(?:\s+[가-힣0-9]+){0,3}?(?:공원|놀이터|광장|숲))(?=\s|$)", tail)
+        r"([가-힣0-9]+(?:\s+[가-힣0-9]+){0,3}?(?:공원|놀이터|광장|숲|분수|수영장|워터파크))(?=\s|$)", tail)
     return matches[-1].strip() if matches else None
 
 
@@ -333,40 +350,49 @@ def geocode_one(f):
         for key, coord in MANUAL_COORDS.items():
             if key in name or (addr and key in addr):
                 return coord[0], coord[1], "manual"
-    # 원본의 이름·주소가 그대로면 이미 검증된 좌표를 우선해 반복 실행의 회귀를 막는다.
-    previous = previous_facilities.get(f.get("id"))
-    if (previous and previous.get("district") == district
-            and previous.get("name") == name and previous.get("address") == addr
-            and previous.get("geo") in {"manual", "geocoded"}):
-        return previous["lat"], previous["lng"], previous["geo"]
-    # 2) nominatim ladder
-    queries = []
+    # (Nominatim -> Kakao 전환 마이그레이션 중에는 재검증이 목적이므로, 재조회 전에
+    # 기존 좌표를 그대로 재사용하는 지름길은 쓰지 않는다 — 옛 좌표에 남아있던 오류가
+    # 그대로 보존되는 걸 막기 위함. 재조회가 실패했을 때의 후퇴용 가드만 유지한다.)
+    # 2) 카카오 주소검색: 원주소 → 정제주소
+    addr_queries = []
     if addr:
-        queries.append(with_region_prefix(addr, prefix, region))
+        addr_queries.append(with_region_prefix(addr, prefix, region))
         ca = clean_address(addr)
         if ca and ca != addr:
-            queries.append(with_region_prefix(ca, prefix, region))
-    queries.append(f"{prefix} {dq} {name}".strip())
+            addr_queries.append(with_region_prefix(ca, prefix, region))
+    seen_addr = set()
+    for q in addr_queries:
+        if q in seen_addr:
+            continue
+        seen_addr.add(q)
+        hit = kakao_address(q, region)
+        if hit:
+            return hit["lat"], hit["lng"], "geocoded"
+
+    # 3) 카카오 키워드검색: 지자체+공원명(고유명만) → 지자체+시설명(원문)
+    # "OO공원 물놀이장"처럼 일반 단어가 붙은 원문으로 먼저 검색하면 카카오 키워드
+    # 랭킹이 "물놀이장"이 들어간 엉뚱한 장소를 1순위로 주는 경우가 있어, 고유명만
+    # 추출한 쿼리를 먼저 시도한다.
+    queries = []
     pk = park_name(name)
-    if pk and pk != name:
+    if pk:
         queries.append(f"{prefix} {dq} {pk}".strip())
         # 공공데이터의 '근린공원'과 지도상의 축약명 '공원' 차이도 조회한다.
         if "근린공원" in pk:
             queries.append(f"{prefix} {dq} {pk.replace('근린공원', '공원')}".strip())
+    queries.append(f"{prefix} {dq} {name}".strip())
     seen = set()
     for q in queries:
         if q in seen:
             continue
         seen.add(q)
-        results = nominatim(q, region)
-        if results:
-            return results[0]["lat"], results[0]["lng"], "geocoded"
-    # 주소·이름이 갱신돼 재조회가 실패해도 기존의 검증 좌표를 근사치로 덮지 않는다.
-    previous = previous_facilities.get(f.get("id"))
-    if (previous and previous.get("district") == district
-            and (previous.get("name") == name or previous.get("address") == addr)
-            and previous.get("geo") in {"manual", "geocoded"}):
-        return previous["lat"], previous["lng"], previous["geo"]
+        hit = kakao_keyword(q, region)
+        if hit:
+            return hit["lat"], hit["lng"], "geocoded"
+    # (Nominatim -> Kakao 마이그레이션 중에는 옛 "geocoded" 좌표를 재조회 실패의
+    # 대체값으로 신뢰하지 않는다 — 옛 값 자체가 "서울 강동구"류의 모호한 주소를
+    # 공유하는 여러 시설이 같은 좌표로 잘못 묶인 경우가 있었기 때문. 재조회가
+    # 실패하면 정직하게 근사(approx) 처리한다.)
     # 3) district jitter (결정적)
     clat, clng = DISTRICT_CENTERS.get(district, (37.5665, 126.9780))
     jlat = ((f["id"] * 37) % 100 - 50) * 0.00028

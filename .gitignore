@@ -1,3 +1,8 @@
+# ===== 비밀키·인증정보 (절대 커밋 금지) =====
+.env
+.env.*
+*.key
+
 __pycache__/
 *.pyc
 Thumbs.db
