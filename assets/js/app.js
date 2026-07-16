@@ -505,6 +505,7 @@
         p.getAttribute('data-status') === '' ||
         p.getAttribute('data-type') === '');
     });
+    document.querySelectorAll('[data-toggle]').forEach(function (p) { p.classList.remove('active'); });
     setDistrict('');
   });
 

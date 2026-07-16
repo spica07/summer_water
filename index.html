@@ -55,19 +55,19 @@
         <span class="filter-label">빠른필터</span>
         <button class="pill" id="feeFree" data-toggle="fee">무료만</button>
         <button class="pill" id="openToday" data-toggle="openToday">오늘 운영중</button>
+        <button class="pill reset" id="resetBtn">초기화</button>
       </div>
     </div>
     <div class="result-count-row" id="resultCountRow">
-      <button class="pill" id="favOnly" data-toggle="favOnly">찜만 보기</button>
-      <button class="pill reset" id="resetBtn">초기화</button>
       <span class="result-count" id="resultCount"></span>
     </div>
   </section>
 
   <!-- 뷰 전환 (모바일) -->
   <div class="view-toggle" id="viewToggle">
-    <button class="pill" data-view="map">🗺️ 지도</button>
-    <button class="pill active" data-view="list">📋 목록</button>
+    <button class="pill" data-view="map">지도</button>
+    <button class="pill active" data-view="list">목록</button>
+    <button class="pill" id="favOnly" data-toggle="favOnly">찜만 보기</button>
   </div>
 
   <!-- 지도 + 카드 목록 -->
