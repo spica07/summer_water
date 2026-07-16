@@ -37,31 +37,31 @@
   <section class="panel filter-bar">
     <div class="filter-row search-row">
       <div class="search-box">
-        <span class="search-icon">🔍</span>
+        <span class="search-icon"></span>
         <input type="search" id="searchInput" placeholder="시설명이나 주소로 검색해 보세요" autocomplete="off">
       </div>
       <select id="districtSelect" class="district-select" aria-label="지자체 선택">
         <option value="">전체 지자체</option>
       </select>
       <button class="filter-collapse-btn" id="filterToggleBtn" type="button"
-              title="필터 열기" aria-label="필터 열기" aria-expanded="false">🔽</button>
+              title="필터 열기" aria-label="필터 열기" aria-expanded="false">▼</button>
     </div>
     <div class="filter-groups" id="filterGroups" hidden>
       <div class="filter-row" id="regionFilters" data-key="region">
-        <span class="filter-label">🌏 지역</span>
+        <span class="filter-label">지역</span>
       </div>
       <div class="filter-row" id="statusFilters" data-key="status">
-        <span class="filter-label">✅ 운영상태</span>
+        <span class="filter-label">운영상태</span>
       </div>
       <div class="filter-row" id="typeFilters" data-key="type">
-        <span class="filter-label">🏷️ 시설유형</span>
+        <span class="filter-label">시설유형</span>
       </div>
       <div class="filter-row">
-        <span class="filter-label">⚡ 빠른필터</span>
-        <button class="pill" id="feeFree" data-toggle="fee">💰 무료만</button>
-        <button class="pill" id="openToday" data-toggle="openToday">☀️ 오늘 운영중</button>
-        <button class="pill" id="favOnly" data-toggle="favOnly">❤️ 찜만 보기</button>
-        <button class="pill reset" id="resetBtn">↺ 초기화</button>
+        <span class="filter-label">빠른필터</span>
+        <button class="pill" id="feeFree" data-toggle="fee">무료만</button>
+        <button class="pill" id="openToday" data-toggle="openToday">오늘 운영중</button>
+        <button class="pill" id="favOnly" data-toggle="favOnly">찜만 보기</button>
+        <button class="pill reset" id="resetBtn">초기화</button>
       </div>
     </div>
     <div class="result-count" id="resultCount"></div>
