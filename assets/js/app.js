@@ -463,7 +463,9 @@
     if (togglePill) {
       var key = togglePill.getAttribute('data-toggle');
       state[key] = !state[key];
-      togglePill.classList.toggle('active', state[key]);
+      document.querySelectorAll('[data-toggle="' + key + '"]').forEach(function (p) {
+        p.classList.toggle('active', state[key]);
+      });
       saveLastFilters();
       render();
       return;
