@@ -1,0 +1,61 @@
+# robots.txt — 전국 물놀이장 지도
+# 일반 검색엔진(구글·빙 등)의 노출은 허용하되,
+# AI 학습용 크롤러와 대량 수집 봇은 차단한다.
+# (정적 사이트라 강제력은 없으며, 규칙을 지키는 봇에만 적용됨.
+#  악성 봇은 호스팅/CDN의 봇 보호로 별도 차단 권장.)
+
+# --- AI 학습/수집 크롤러 차단 ---
+User-agent: GPTBot
+Disallow: /
+
+User-agent: OAI-SearchBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: Anthropic-AI
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: FacebookBot
+Disallow: /
+
+User-agent: Diffbot
+Disallow: /
+
+User-agent: ImagesiftBot
+Disallow: /
+
+User-agent: Omgili
+Disallow: /
+
+User-agent: cohere-ai
+Disallow: /
+
+# --- 일반 검색엔진은 정상 노출 허용 ---
+User-agent: *
+Allow: /
