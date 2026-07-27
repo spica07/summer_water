@@ -362,3 +362,50 @@ body {
   .district-bars { max-height: 260px; overflow-y: auto; }
   .filter-label { width: 100%; min-width: 0; }
 }
+
+/* 독도 표시 — 배경 지도 표기에 기대지 않고 늘 같은 자리에 이름을 둔다 */
+.dokdo-label {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  color: #2f2e2b;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff;
+}
+.dokdo-label.leaflet-tooltip-right::before,
+.dokdo-label.leaflet-tooltip-left::before { display: none; }
+
+/* 링크 복사 버튼 — 헤더 오른쪽 끝 */
+.app-header { position: relative; }
+.header-inner { position: relative; padding-right: 46px; }
+.share-link-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 999px;
+  background: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.share-link-btn:active { transform: scale(0.92); }
+.share-link-toast {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  z-index: 5;
+  margin: 0;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.78);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}

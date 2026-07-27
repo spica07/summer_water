@@ -149,6 +149,27 @@
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
   }).addTo(map);
+
+  /* ---------- 독도 ---------- */
+  // 배경 지도 표기는 축척·언어에 따라 달라지거나 빠질 수 있다.
+  // 우리 지도에서는 독도를 항상 같은 자리에 직접 그린다. (독도 표시)
+  // 행정구역: 경상북도 울릉군 울릉읍 독도리
+  (function markDokdo() {
+    var dokdo = L.circleMarker([37.2429, 131.8664], {
+      radius: 5,
+      color: '#2f2e2b',
+      weight: 1.6,
+      fillColor: '#ffffff',
+      fillOpacity: 1
+    }).addTo(map);
+    dokdo.bindTooltip('독도', {
+      permanent: true,
+      direction: 'right',
+      offset: [6, 0],
+      className: 'dokdo-label'
+    });
+    dokdo.bindPopup('<b>독도</b><br>경상북도 울릉군 울릉읍 독도리');
+  })();
   var markerLayer = L.layerGroup().addTo(map);
   var markersById = {};
 
