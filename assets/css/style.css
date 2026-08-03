@@ -385,12 +385,12 @@ body {
   position: absolute;
   right: 0;
   top: 0;
-  width: 34px;
-  height: 34px;
+  width: 26px;
+  height: 26px;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 999px;
   background: #fff;
-  font-size: 1rem;
+  font-size: 0.78rem;
   line-height: 1;
   cursor: pointer;
 }
@@ -398,7 +398,7 @@ body {
 .share-link-toast {
   position: absolute;
   right: 0;
-  top: 40px;
+  top: 32px;
   z-index: 5;
   margin: 0;
   padding: 5px 11px;
