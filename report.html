@@ -2,11 +2,11 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <title>지자체별 요약 리포트</title>
 <meta name="description" content="전국 지자체별 공공 물놀이장 현황 요약 리포트">
-<meta name="theme-color" content="#6B5B95">
+<meta name="theme-color" content="#0E7C86">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="512x512" href="assets/icons/app-icon-512.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/app-icon-apple-180.png">
@@ -18,12 +18,14 @@
 <body>
 
 <header class="app-header">
-  <a class="report-btn" href="index.html">지도로</a>
   <div class="header-inner">
-    <h1 class="app-title">지자체별 요약 리포트</h1>
-    <p class="app-subtitle">전국 공공 물놀이장 <span id="totalCount"></span>곳 · 조사 기준일 <span id="surveyDate"></span></p>
-    <div class="top-notice">참고용으로만 사용! 방문 전 확인하세요.</div>
+    <svg class="sign-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2.6" y="12.4" width="4.4" height="9"/><rect x="9.8" y="7.6" width="4.4" height="13.8"/><rect x="17" y="3.4" width="4.4" height="18"/></svg>
+    <div class="sign-text">
+      <h1 class="app-title">지역별 요약 리포트</h1>
+    </div>
+    <a class="report-btn" href="index.html">지도로</a>
   </div>
+  <p class="app-notice">전국 물놀이장 · 자료 조회일 <span id="surveyDate"></span> · 참고용입니다.</p>
 </header>
 
 <main class="container report-page">

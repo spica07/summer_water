@@ -6,6 +6,14 @@
   var DISTRICT_META = window.DISTRICT_META || {};
   var DATA_META = window.DATA_META || {};
 
+  var HEART_ICON = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+    '<path d="M12 20.4 4.3 12.8a4.8 4.8 0 0 1 6.8-6.8l.9.9.9-.9a4.8 4.8 0 1 1 6.8 6.8z"/></svg>';
+
+  var ROOT_STYLE = getComputedStyle(document.documentElement);
+  function cssVar(name, fallback) {
+    return (ROOT_STYLE.getPropertyValue(name) || '').trim() || fallback;
+  }
+
   var TYPE_ORDER = ['공원 물놀이터', '물놀이 분수', '한강 물놀이장', '하천/계곡', '야외 수영장', '기타'];
   var STATUS_ORDER = ['운영중', '운영예정', '2026 확인', '전년도 확인', '재확인 필요', '기타 확인', '중단'];
   var REGION_ORDER = ['서울', '부산', '대구', '인천', '광주', '대전', '울산', '세종',
@@ -80,7 +88,7 @@
   }
 
   function districtColor(d) {
-    return (DISTRICT_META[d] && DISTRICT_META[d].color) || '#6B5B95';
+    return cssVar('--kind-1', '#0E7C86');
   }
 
   function statusClass(s) {
@@ -221,7 +229,7 @@
     var dc = districtColor(f.district);
     var fav = favorites.has(f.id);
     var tags = [
-      '<span class="tag district" style="background:' + dc + '">' + esc(f.district) + '</span>',
+      '<span class="tag district">' + esc(f.district) + '</span>',
       '<span class="tag ' + statusClass(f.status) + '">' + esc(f.status) + '</span>'
     ];
     if (f.isFree === true) tags.push('<span class="tag free">무료</span>');
@@ -234,7 +242,8 @@
         '<div class="card-body">' +
           '<div class="card-title-row">' +
             '<h3 class="card-name">' + esc(f.name) + '</h3>' +
-            '<button class="fav-btn" data-fav="' + f.id + '" aria-label="찜">' + (fav ? '❤️' : '🤍') + '</button>' +
+            '<button class="fav-btn' + (fav ? ' on' : '') + '" data-fav="' + f.id + '"' +
+              ' aria-label="찜" aria-pressed="' + fav + '">' + HEART_ICON + '</button>' +
           '</div>' +
           '<div class="card-tags">' + tags.join('') + '</div>' +
           info.join('') +
@@ -272,7 +281,7 @@
     body.innerHTML =
       '<h2 class="modal-title">' + esc(f.name) + '</h2>' +
       '<div class="modal-tags">' +
-        '<span class="tag district" style="background:' + dc + '">' + esc(f.district) + '</span>' +
+        '<span class="tag district">' + esc(f.district) + '</span>' +
         '<span class="tag ' + statusClass(f.status) + '">' + esc(f.status) + '</span>' +
       '</div>' +
       (f.geo === 'approx'
@@ -293,7 +302,7 @@
       '</div>' +
       '<div class="modal-links">' +
         '<a class="link-btn map" href="' + naverUrl + '" target="_blank" rel="noopener">네이버 길찾기</a>' +
-        '<button class="link-btn fav" data-fav="' + f.id + '">' + (fav ? '❤️ 찜 해제' : '🤍 찜하기') + '</button>' +
+        '<button class="link-btn fav" data-fav="' + f.id + '">' + (fav ? '찜 해제' : '찜하기') + '</button>' +
       '</div>';
     document.getElementById('modalOverlay').hidden = false;
     document.body.style.overflow = 'hidden';
@@ -366,8 +375,8 @@
 
   function buildLegend() {
     document.getElementById('mapLegend').innerHTML =
-      '<span><span class="legend-dot" style="background:#FF6B9D"></span>정확 위치</span>' +
-      '<span><span class="legend-dot approx" style="background:#6B5B95"></span>대략 위치(지자체 기준)</span>';
+      '<span><span class="legend-dot" style="background:' + cssVar('--kind-1', '#0E7C86') + '"></span>정확 위치</span>' +
+      '<span><span class="legend-dot approx" style="background:' + cssVar('--kind-2', '#9AA6A8') + '"></span>대략 위치(지자체 기준)</span>';
   }
 
   /* ---------- 이벤트 ---------- */
@@ -420,7 +429,6 @@
   filterToggleBtn.addEventListener('click', function () {
     var willOpen = filterGroups.hidden;
     filterGroups.hidden = !willOpen;
-    filterToggleBtn.textContent = willOpen ? '▲' : '▼';
     var label = willOpen ? '필터 닫기' : '필터 열기';
     filterToggleBtn.title = label;
     filterToggleBtn.setAttribute('aria-label', label);

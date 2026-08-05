@@ -15,7 +15,9 @@
   btn.className = 'share-link-btn';
   btn.title = '링크 복사';
   btn.setAttribute('aria-label', '이 페이지 링크 복사');
-  btn.textContent = '\uD83D\uDD17';
+  btn.innerHTML = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+    '<path d="M10.5 13.5a3.6 3.6 0 0 0 5.1 0l3-3a3.6 3.6 0 1 0-5.1-5.1l-1 1"/>' +
+    '<path d="M13.5 10.5a3.6 3.6 0 0 0-5.1 0l-3 3a3.6 3.6 0 1 0 5.1 5.1l1-1"/></svg>';
 
   var toast = document.createElement('p');
   toast.className = 'share-link-toast';

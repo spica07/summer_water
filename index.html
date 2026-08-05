@@ -2,11 +2,11 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <title>전국 물놀이장 지도</title>
 <meta name="description" content="전국 시·군·구 공공 물놀이장 지도 — 지자체별 조회, 검색, 운영정보">
-<meta name="theme-color" content="#6B5B95">
+<meta name="theme-color" content="#0E7C86">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="512x512" href="assets/icons/app-icon-512.png">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/app-icon-apple-180.png">
@@ -21,10 +21,13 @@
 
 <header class="app-header">
   <div class="header-inner">
-    <h1 class="app-title">전국 물놀이장 지도</h1>
-    <p class="app-subtitle">전국 시·군·구 공공 물놀이장 <span id="totalCount"></span>곳을 한눈에!</p>
-    <div class="top-notice">참고용으로만 사용! 방문 전 확인하세요.</div>
+    <svg class="sign-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M1.6 8.2c1.7-1.6 3.4-1.6 5.1 0 1.7 1.6 3.4 1.6 5.1 0 1.7-1.6 3.4-1.6 5.1 0 1.2 1.1 2.4 1.5 3.5 1.1v3c-1.1.4-2.3 0-3.5-1.1-1.7-1.6-3.4-1.6-5.1 0-1.7 1.6-3.4 1.6-5.1 0-1.7-1.6-3.4-1.6-5.1 0z"/><path d="M1.6 15.4c1.7-1.6 3.4-1.6 5.1 0 1.7 1.6 3.4 1.6 5.1 0 1.7-1.6 3.4-1.6 5.1 0 1.2 1.1 2.4 1.5 3.5 1.1v3c-1.1.4-2.3 0-3.5-1.1-1.7-1.6-3.4-1.6-5.1 0-1.7 1.6-3.4 1.6-5.1 0-1.7-1.6-3.4-1.6-5.1 0z"/></svg>
+    <div class="sign-text">
+      <h1 class="app-title">전국 물놀이장</h1>
+    </div>
+    <p class="sign-count"><span class="num" id="totalCount"></span><span class="unit">곳</span></p>
   </div>
+  <p class="app-notice">참고용입니다. 방문 전 운영 여부를 꼭 확인하세요.</p>
 </header>
 
 <main class="container">
@@ -39,7 +42,9 @@
         <option value="">전체 지자체</option>
       </select>
       <button class="filter-collapse-btn" id="filterToggleBtn" type="button"
-              title="필터 열기" aria-label="필터 열기" aria-expanded="false">▼</button>
+              title="필터 열기" aria-label="필터 열기" aria-expanded="false">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 9l7 7 7-7"/></svg>
+      </button>
     </div>
     <div class="filter-groups" id="filterGroups" hidden>
       <div class="filter-row" id="regionFilters" data-key="region">
@@ -68,8 +73,8 @@
   <div class="view-toggle" id="viewToggle">
     <button class="pill" data-view="map">지도</button>
     <button class="pill active" data-view="list">목록</button>
-    <button class="pill" id="favOnly" data-toggle="favOnly">찜만 보기</button>
   </div>
+      <button class="pill" id="favOnly" data-toggle="favOnly">찜만 보기</button>
 
   <!-- 지도 + 카드 목록 -->
   <section class="content-grid">
@@ -97,7 +102,9 @@
 <!-- 상세 모달 -->
 <div class="modal-overlay" id="modalOverlay" hidden>
   <div class="modal-card" role="dialog" aria-modal="true">
-    <button class="modal-close" id="modalClose" aria-label="닫기">✕</button>
+    <button class="modal-close" id="modalClose" aria-label="닫기">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
     <div class="modal-body" id="modalBody"></div>
   </div>
 </div>
