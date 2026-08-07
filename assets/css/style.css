@@ -820,8 +820,6 @@ body {
 .legend-dot.approx { opacity: .75; }
 
 /* ---------- 내 주변 (geo.js) ---------- */
-.nearby-btn { gap: 5px; }
-.nearby-btn .ico { width: 16px; height: 16px; }
 /* 위치를 묻는 동안 — 브라우저 팝업이 떠 있는 시간이라 몇 초씩 걸린다.
    버튼이 눌리지 않는 이유를 색으로 알린다. */
 .nearby-btn:disabled { opacity: .55; cursor: default; }
