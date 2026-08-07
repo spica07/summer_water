@@ -818,3 +818,31 @@ body {
   color: var(--ink-muted);
 }
 .legend-dot.approx { opacity: .75; }
+
+/* ---------- 내 주변 (geo.js) ---------- */
+.nearby-btn { gap: 5px; }
+.nearby-btn .ico { width: 16px; height: 16px; }
+/* 위치를 묻는 동안 — 브라우저 팝업이 떠 있는 시간이라 몇 초씩 걸린다.
+   버튼이 눌리지 않는 이유를 색으로 알린다. */
+.nearby-btn:disabled { opacity: .55; cursor: default; }
+
+/* 거리는 내 주변 모드에서만 붙고, 그 화면에서 가장 먼저 읽는 값이다.
+   면 채움은 무료 태그의 몫이므로 여기서는 옅은 톤으로 둔다. */
+.tag.dist {
+  border-color: var(--sign);
+  background: var(--sign-wash);
+  color: var(--sign);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* 지도 위에 띄우지 않는다 — 모바일 기본이 목록 뷰라, 거기서 권한 안내를
+   못 보면 사용자는 버튼이 고장 난 줄 안다. */
+.nearby-notice {
+  margin-top: 8px;
+  font-size: var(--fs-s);
+  line-height: 1.5;
+  color: var(--ink-muted);
+}
+.nearby-notice[hidden] { display: none; }

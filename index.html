@@ -70,9 +70,14 @@
         <button class="pill pill-sm" data-view="map">지도</button>
         <button class="pill pill-sm active" data-view="list">목록</button>
       </div>
+      <button class="pill pill-sm nearby-btn" id="nearbyBtn" type="button" aria-pressed="false">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 21.2c4.3-4.4 6.5-7.8 6.5-10.4a6.5 6.5 0 1 0-13 0c0 2.6 2.2 6 6.5 10.4z"/><circle cx="12" cy="10.6" r="2.4"/></svg>
+        <span id="nearbyLabel">내 주변</span>
+      </button>
       <button class="pill pill-sm" id="favOnly" data-toggle="favOnly">찜만 보기</button>
       <span class="result-count" id="resultCount"></span>
     </div>
+    <p class="nearby-notice" id="nearbyNotice" hidden></p>
   </section>
 
   <!-- 지도 + 카드 목록 -->
@@ -111,6 +116,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
 <script src="assets/js/data.js"></script>
+<script src="assets/js/geo.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/share-link.js"></script>
 </body>

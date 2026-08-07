@@ -8,7 +8,7 @@
  *
  * 콘텐츠를 크게 바꾸면 CACHE 버전 숫자를 올려서 옛 캐시를 비운다.
  */
-const CACHE = 'summer-water-cache-v15';
+const CACHE = 'summer-water-cache-v16';
 
 // 첫 진입에 필요한 핵심 자원(앱 셸) — 오프라인 첫 실행 보장
 const CORE_ASSETS = [
@@ -18,6 +18,7 @@ const CORE_ASSETS = [
   'assets/css/style.css',
   'assets/js/data.js',
   'assets/js/app.js',
+  'assets/js/geo.js',
   'assets/js/report.js',
   'assets/icons/app-icon-192.png',
   'assets/icons/app-icon-512.png',

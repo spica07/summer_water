@@ -229,6 +229,7 @@
     var dc = districtColor(f.district);
     var fav = favorites.has(f.id);
     var tags = [
+      nearby.tag(f),
       '<span class="tag district">' + esc(f.district) + '</span>',
       '<span class="tag ' + statusClass(f.status) + '">' + esc(f.status) + '</span>'
     ];
@@ -288,6 +289,7 @@
         ? '<div class="geo-notice">지도 위치는 지자체 기준 대략적인 표시예요. 정확한 위치는 길찾기로 확인하세요.</div>'
         : '') +
       '<div class="detail-list">' +
+        detailRow('내 위치에서', nearby.text(f)) +
         detailRow('유형', f.typeRaw) +
         detailRow('주소', f.address) +
         detailRow('운영기간', f.period) +
@@ -315,12 +317,39 @@
 
   /* ---------- 렌더 파이프라인 ---------- */
   function render() {
-    var list = FACILITIES.filter(matches);
+    var list = nearby.sort(FACILITIES.filter(matches));
     renderMarkers(list);
     renderCards(list);
-    document.getElementById('resultCount').textContent =
-      '총 ' + list.length + '곳' + (list.length < FACILITIES.length ? ' (전체 ' + FACILITIES.length + '곳 중)' : '');
+    document.getElementById('resultCount').textContent = nearby.active()
+      ? '가까운 ' + list.length + '곳'
+      : '총 ' + list.length + '곳' + (list.length < FACILITIES.length ? ' (전체 ' + FACILITIES.length + '곳 중)' : '');
   }
+
+  /* ---------- 내 주변 ----------
+     권한 요청·거리 계산·내 위치 마커는 geo.js 가 맡는다. 이 앱이 알려줄 것은
+     좌표를 꺼내는 법과, 지역 필터를 어떻게 푸는지뿐이다. */
+
+  /* 지역 필터만 조용히 푼다 — setRegion/setDistrict 는 지도를 날리고 render
+     까지 부르므로 켜는 길목에서 쓰면 화면이 두 번 튄다. */
+  function clearRegion() {
+    state.region = '';
+    state.district = '';
+    document.getElementById('districtSelect').value = '';
+    document.querySelectorAll('#regionFilters .pill').forEach(function (p) {
+      p.classList.toggle('active', p.getAttribute('data-region') === '');
+    });
+  }
+
+  var nearby = window.createNearby({
+    map: map,
+    button: document.getElementById('nearbyBtn'),
+    label: document.getElementById('nearbyLabel'),
+    notice: document.getElementById('nearbyNotice'),
+    unitLabel: '물놀이장',
+    latLngOf: function (f) { return [f.lat, f.lng]; },
+    onClear: clearRegion,
+    onChange: render
+  });
 
   /* ---------- 초기 UI 구성 ---------- */
   function buildFilterPills() {
@@ -381,6 +410,7 @@
 
   /* ---------- 이벤트 ---------- */
   function setDistrict(d) {
+    nearby.off();
     state.district = d;
     document.getElementById('districtSelect').value = d;
     if (d && DISTRICT_META[d]) {
@@ -394,6 +424,7 @@
   }
 
   function setRegion(r) {
+    nearby.off();   /* 지역을 고르는 건 내 주변을 그만두겠다는 뜻이다 */
     state.region = r;
     // 다른 지역의 자치구가 선택돼 있으면 해제
     if (state.district && DISTRICT_META[state.district] &&
